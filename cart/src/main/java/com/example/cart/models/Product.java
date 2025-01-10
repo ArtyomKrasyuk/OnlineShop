@@ -1,8 +1,8 @@
 package com.example.cart.models;
 
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,8 +10,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "product")
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Product {
-    @EmbeddedId
-    private ProductId productId;
-    private int count;
+    @jakarta.persistence.EmbeddedId
+    private EmbeddedId embeddedId;
+    private int number;
 }

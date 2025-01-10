@@ -1,18 +1,15 @@
-package com.example.cart.models;
+package com.example.gateway.dto;
 
-import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Embeddable
-public class ProductId implements Serializable {
+public class ProductAvailabilityDTO {
     private UUID userId;
     private long productId;
 }

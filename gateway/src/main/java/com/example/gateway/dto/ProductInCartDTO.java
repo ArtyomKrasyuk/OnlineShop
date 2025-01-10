@@ -4,14 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductDTO {
-    private long id;
-    private String title;
-    private String description;
-    private String category;
-    private double price;
+public class ProductInCartDTO {
+    private UUID userId;
+    private long productId;
     private int number;
 }

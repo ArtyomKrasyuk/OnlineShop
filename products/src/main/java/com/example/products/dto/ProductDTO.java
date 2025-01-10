@@ -14,6 +14,7 @@ public class ProductDTO {
     private String description;
     private String category;
     private double price;
+    private int number;
 
     public ProductDTO(Product product){
         this.id = product.getId();
@@ -21,5 +22,6 @@ public class ProductDTO {
         this.description = product.getDescription();
         this.category = product.getCategory().getTitle();
         this.price = product.getPrice();
+        this.number = product.getNumber();
     }
 }

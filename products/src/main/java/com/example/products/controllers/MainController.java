@@ -66,23 +66,16 @@ public class MainController {
     )
     @SendTo
     public ProductListContainer getProductsWithCategory(String categoryTitle) {
-        /*
         Category category = null;
         try {
             category = categoryRep.findByTitle(categoryTitle).orElseThrow();
         } catch (NoSuchElementException e) {
             System.out.println("No such category: " + categoryTitle); // add logging
         }
-        var result = new ArrayList<ProductDTO>();
+        var result = new ProductListContainer();
         if(category == null) return result;
-        category.getProducts().forEach(product -> result.add(new ProductDTO(product)));
-
-         */
-        System.out.println(categoryTitle);
-        var result = new ArrayList<ProductDTO>();
-        result.add(new ProductDTO(1, "POCO", "Desc", "Category", 200));
-        result.add(new ProductDTO(2, "POCO", "Desc", "Category", 200));
-        return new ProductListContainer(result);
+        category.getProducts().forEach(product -> result.getList().add(new ProductDTO(product)));
+        return result;
     }
 
     @KafkaListener(
@@ -91,7 +84,7 @@ public class MainController {
     )
     @SendTo
     public ProductDTO getProduct(Long productId){
-        /*Product product = null;
+        Product product = null;
         try{
             product = productRep.findById(productId).orElseThrow();
         }
@@ -99,8 +92,6 @@ public class MainController {
             System.out.println("No such product with id: " + productId); // add logging
         }
         if(product == null) return new ProductDTO();
-        else return new ProductDTO(product);*/
-        System.out.println("Id: " + productId);
-        return new ProductDTO(1, "POCO", "Desc", "Category", 200);
+        else return new ProductDTO(product);
     }
 }

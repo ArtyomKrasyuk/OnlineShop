@@ -19,7 +19,7 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     private Category category;
-    private long number;
+    private int number;
     @OneToMany(mappedBy = "product")
     @EqualsAndHashCode.Exclude
     private Set<Characteristic> characteristics;

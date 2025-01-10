@@ -1,13 +1,13 @@
 package com.example.gateway.config;
 
-import com.example.gateway.dto.ProductDTO;
-import com.example.gateway.dto.ProductListContainer;
+import com.example.gateway.dto.*;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.BooleanDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -23,11 +23,9 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Configuration
 @EnableKafka
@@ -60,6 +58,36 @@ public class KafkaConfig {
     @Bean("responseProduct")
     public NewTopic createTopicForProduct(){
         return new NewTopic("product-response-event-topic", 1, (short) 1);
+    }
+
+    @Bean("addToCart")
+    public NewTopic addProductToCart(){
+        return new NewTopic("add-to-cart-event-topic", 1, (short) 1);
+    }
+
+    @Bean("deleteFromCart")
+    public NewTopic deleteFromCart(){
+        return new NewTopic("delete-from-cart-event-topic", 1, (short) 1);
+    }
+
+    @Bean("checkAvailability")
+    public NewTopic checkAvailabilityTopic(){
+        return new NewTopic("check-availability-event-topic", 1, (short) 1);
+    }
+
+    @Bean("checkAvailabilityResponse")
+    public NewTopic checkAvailabilityResponseTopic(){
+        return new NewTopic("check-availability-response-event-topic", 1, (short) 1);
+    }
+
+    @Bean("gettingProductsFromCartRequest")
+    public NewTopic gettingProductsFromCartRequestTopic(){
+        return new NewTopic("getting-products-from-cart-event-topic", 1, (short) 1);
+    }
+
+    @Bean("gettingProductsFromCartResponse")
+    public NewTopic gettingProductsFromCartResponseTopic(){
+        return new NewTopic("getting-products-from-cart-response-event-topic", 1, (short) 1);
     }
 
     /*@Bean
@@ -152,6 +180,97 @@ public class KafkaConfig {
     public ReplyingKafkaTemplate<String, Long, ProductDTO> replyingKafkaTemplateForProduct(
             ProducerFactory<String, Long> producerFactory,
             KafkaMessageListenerContainer<String, ProductDTO> replyContainer
+    ) {
+        return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
+    }
+
+    // ---------------------------------Product in cart-----------------------------------------
+
+    @Bean
+    public ProducerFactory<String, ProductInCartDTO> producerFactoryForAddingToCart(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaTemplate<String, ProductInCartDTO> kafkaTemplateForCart(ProducerFactory<String, ProductInCartDTO> factory) {
+        return new KafkaTemplate<>(factory);
+    }
+
+    @Bean
+    public ConsumerFactory<String, Boolean> consumerFactoryForProductInChecking(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BooleanDeserializer.class);
+        return new DefaultKafkaConsumerFactory<>(config);
+    }
+
+    @Bean
+    public ProducerFactory<String, ProductAvailabilityDTO> producerFactoryForProductChecking(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaMessageListenerContainer<String, Boolean> replyContainerForProductChecking(
+            @Qualifier("checkAvailabilityResponse") NewTopic topic,
+            ConsumerFactory<String, Boolean> consumerFactory
+    ) {
+        ContainerProperties containerProperties = new ContainerProperties(topic.name());
+        return new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
+    }
+
+    @Bean
+    public ReplyingKafkaTemplate<String, ProductAvailabilityDTO, Boolean> replyingKafkaTemplateForChecking(
+            ProducerFactory<String, ProductAvailabilityDTO> producerFactory,
+            KafkaMessageListenerContainer<String, Boolean> replyContainer
+    ) {
+        return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
+    }
+
+    @Bean
+    public ConsumerFactory<String, ProductInCartListContainer> consumerFactoryForGettingProductsFromCart(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        var serializer = new JsonDeserializer<>(ProductInCartListContainer.class);
+        serializer.addTrustedPackages("*");
+        serializer.setUseTypeHeaders(false);
+        return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), serializer);
+    }
+
+    @Bean
+    public ProducerFactory<String, UUID> producerFactoryForGettingProductsFromCart(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaMessageListenerContainer<String, ProductInCartListContainer> replyContainerForGettingProductsFromCart(
+            @Qualifier("gettingProductsFromCartResponse") NewTopic topic,
+            ConsumerFactory<String, ProductInCartListContainer> consumerFactory
+    ) {
+        ContainerProperties containerProperties = new ContainerProperties(topic.name());
+        return new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
+    }
+
+    @Bean
+    public ReplyingKafkaTemplate<String, UUID, ProductInCartListContainer> replyingKafkaTemplateForGettingProductsFromCart(
+            ProducerFactory<String, UUID> producerFactory,
+            KafkaMessageListenerContainer<String, ProductInCartListContainer> replyContainer
     ) {
         return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
     }
