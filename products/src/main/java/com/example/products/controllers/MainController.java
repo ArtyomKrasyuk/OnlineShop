@@ -1,8 +1,6 @@
 package com.example.products.controllers;
 
-import com.example.products.dto.ProductDTO;
-import com.example.products.dto.ProductInfoDTO;
-import com.example.products.dto.ProductListContainer;
+import com.example.products.dto.*;
 import com.example.products.models.Category;
 import com.example.products.models.Product;
 import com.example.products.repos.*;
@@ -37,29 +35,6 @@ public class MainController {
     @Autowired
     private CharacteristicsRepository characteristicsRep;
 
-    /*
-    @KafkaListener(
-            topics = "product-request-event-topic",
-            containerFactory = "productKafkaListenerContainerFactory"
-    )
-    public void getProductInfo(Long productId){
-        Product product = null;
-        try{
-            product = productRep.findById(productId).orElseThrow();
-        }
-        catch (NoSuchElementException ex){
-            System.out.println("No such product with id: " + productId); // add logging
-        }
-        if(product == null) return;
-        ProductInfoDTO productInfoDTO = new ProductInfoDTO(product);
-        CompletableFuture<SendResult<String, ProductInfoDTO>> future = kafkaTemplateForProduct.send(topicForProduct.name(), productInfoDTO);
-        future.whenComplete((res, ex)->{
-            if(ex == null) System.out.println("Message sent");
-            else System.out.println("Ошибка: " + ex.getMessage());
-        });
-    }
-     */
-
     @KafkaListener(
             topics = "category-event-topic",
             containerFactory = "categoryKafkaListenerContainerFactory"
@@ -93,5 +68,51 @@ public class MainController {
         }
         if(product == null) return new ProductDTO();
         else return new ProductDTO(product);
+    }
+
+    @KafkaListener(
+            topics = "getting-products-by-id-event-topic",
+            containerFactory = "kafkaListenerContainerFactoryForProductsBuId"
+    )
+    @SendTo
+    public ProductListContainer getProductsById(ProductIdListContainer container) {
+        ArrayList<ProductDTO> list = new ArrayList<>();
+        for(Long productId: container.getList()){
+            Product product = null;
+            try{
+                product = productRep.findById(productId).orElseThrow();
+            }
+            catch (NoSuchElementException ex){
+                System.out.println(ex.getMessage());
+            }
+            if(product != null) list.add(new ProductDTO(product));
+        }
+        return new ProductListContainer(list);
+    }
+
+    @KafkaListener(
+            topics = "change-number-of-products-request-event-topic",
+            containerFactory = "kafkaListenerContainerFactoryForChangingProducts"
+    )
+    @SendTo
+    public String changeOfProducts(ProductChangeListContainer container) {
+        var list = new ArrayList<Product>();
+        for(ProductChangeDTO elem: container.getList()){
+            try{
+                Product product = productRep.findById(elem.getProductId()).orElseThrow();
+                if(container.isIncrease()) product.setNumber(product.getNumber() + elem.getNumber());
+                else{
+                    if(product.getNumber() < elem.getNumber()) return "Big number";
+                    product.setNumber(product.getNumber() - elem.getNumber());
+                }
+                list.add(product);
+            }
+            catch (NoSuchElementException ex){
+                System.out.println(ex.getMessage());
+                return "Unknown product";
+            }
+        }
+        productRep.saveAll(list); //Do exception handling
+        return "ok";
     }
 }

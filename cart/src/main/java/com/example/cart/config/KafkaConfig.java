@@ -105,7 +105,7 @@ public class KafkaConfig {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, BooleanSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         return new DefaultKafkaProducerFactory<>(config);
     }
 
@@ -122,6 +122,44 @@ public class KafkaConfig {
 
     @Bean
     public KafkaTemplate<String, ProductInCartListContainer> kafkaTemplateForProducts(ProducerFactory<String, ProductInCartListContainer> producerFactory){
+        return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
+    public ConsumerFactory<String, ProductInCartListContainer> consumerFactoryForBuyingProducts(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        var serializer = new JsonDeserializer<>(ProductInCartListContainer.class);
+        serializer.addTrustedPackages("*");
+        serializer.setUseTypeHeaders(false);
+        return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), serializer);
+    }
+
+    @Bean
+    public ProducerFactory<String, Boolean> producerFactoryForBuyingProducts(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, BooleanSerializer.class);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, ProductInCartListContainer> kafkaListenerContainerFactoryForBuyingProducts(
+            ConsumerFactory<String, ProductInCartListContainer> consumerFactory,
+            KafkaTemplate<String, Boolean> kafkaTemplate
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, ProductInCartListContainer> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory);
+        factory.setReplyTemplate(kafkaTemplate);
+        return factory;
+    }
+
+    @Bean
+    public KafkaTemplate<String, Boolean> kafkaTemplateForBuyingProducts(ProducerFactory<String, Boolean> producerFactory){
         return new KafkaTemplate<>(producerFactory);
     }
 }

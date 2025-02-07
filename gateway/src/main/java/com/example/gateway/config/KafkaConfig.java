@@ -90,6 +90,33 @@ public class KafkaConfig {
         return new NewTopic("getting-products-from-cart-response-event-topic", 1, (short) 1);
     }
 
+    @Bean("gettingProductsById")
+    public NewTopic gettingProductsByIdTopic(){
+        return new NewTopic("getting-products-by-id-event-topic", 1, (short) 1);
+    }
+
+
+
+    @Bean("changeNumberOfProductsRequest")
+    public NewTopic changeNumberOfProductsRequestTopic(){
+        return new NewTopic("change-number-of-products-request-event-topic", 1, (short) 1);
+    }
+
+    @Bean("changeNumberOfProductsResponse")
+    public NewTopic changeNumberOfProductsResponseTopic(){
+        return new NewTopic("change-number-of-products-response-event-topic", 1, (short) 1);
+    }
+
+    @Bean("buyProductsRequest")
+    public NewTopic buyProductsRequestTopic(){
+        return new NewTopic("buy-products-request-event-topic", 1, (short) 1);
+    }
+
+    @Bean("buyProductsResponse")
+    public NewTopic buyProductsResponseTopic(){
+        return new NewTopic("buy-products-response-event-topic", 1, (short) 1);
+    }
+
     /*@Bean
     public ConcurrentKafkaListenerContainerFactory<String, ProductListContainer> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, ProductListContainer> factory = new ConcurrentKafkaListenerContainerFactory<>();
@@ -184,6 +211,25 @@ public class KafkaConfig {
         return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
     }
 
+    // ---------------------------------Getting products by id-----------------------------------------
+
+    @Bean
+    public ProducerFactory<String, ProductIdListContainer> producerFactoryForProductsById(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public ReplyingKafkaTemplate<String, ProductIdListContainer, ProductListContainer> replyingKafkaTemplateForProductsById(
+            ProducerFactory<String, ProductIdListContainer> producerFactory,
+            KafkaMessageListenerContainer<String, ProductListContainer> replyContainer
+    ) {
+        return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
+    }
+
     // ---------------------------------Product in cart-----------------------------------------
 
     @Bean
@@ -271,6 +317,81 @@ public class KafkaConfig {
     public ReplyingKafkaTemplate<String, UUID, ProductInCartListContainer> replyingKafkaTemplateForGettingProductsFromCart(
             ProducerFactory<String, UUID> producerFactory,
             KafkaMessageListenerContainer<String, ProductInCartListContainer> replyContainer
+    ) {
+        return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
+    }
+
+    // ---------------------------------Buying products-----------------------------------------
+
+    @Bean
+    public ConsumerFactory<String, String> consumerFactoryForChangingProducts(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        return new DefaultKafkaConsumerFactory<>(config);
+    }
+
+    @Bean
+    public ProducerFactory<String, ProductChangeListContainer> producerFactoryForChangingProducts(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaMessageListenerContainer<String, String> replyContainerForChangingProducts(
+            @Qualifier("changeNumberOfProductsResponse") NewTopic topic,
+            ConsumerFactory<String, String> consumerFactory
+    ) {
+        ContainerProperties containerProperties = new ContainerProperties(topic.name());
+        return new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
+    }
+
+    @Bean
+    public ReplyingKafkaTemplate<String, ProductChangeListContainer, String> replyingKafkaTemplateForChangingProducts(
+            ProducerFactory<String, ProductChangeListContainer> producerFactory,
+            KafkaMessageListenerContainer<String, String> replyContainer
+    ) {
+        return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
+    }
+
+
+    @Bean
+    public ConsumerFactory<String, Boolean> consumerFactoryForBuyingProducts(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BooleanDeserializer.class);
+        return new DefaultKafkaConsumerFactory<>(config);
+    }
+
+    @Bean
+    public ProducerFactory<String, ProductInCartListContainer> producerFactoryForBuyingProducts(){
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaMessageListenerContainer<String, Boolean> replyContainerForBuyingProducts(
+            @Qualifier("buyProductsResponse") NewTopic topic,
+            ConsumerFactory<String, Boolean> consumerFactory
+    ) {
+        ContainerProperties containerProperties = new ContainerProperties(topic.name());
+        return new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
+    }
+
+    @Bean
+    public ReplyingKafkaTemplate<String, ProductInCartListContainer, Boolean> replyingKafkaTemplateForBuyingProducts(
+            ProducerFactory<String, ProductInCartListContainer> producerFactory,
+            KafkaMessageListenerContainer<String, Boolean> replyContainer
     ) {
         return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
     }

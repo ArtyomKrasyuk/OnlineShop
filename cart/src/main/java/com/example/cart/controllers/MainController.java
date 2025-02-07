@@ -54,16 +54,35 @@ public class MainController {
             containerFactory = "kafkaListenerContainerFactoryForProducts"
     )
     @SendTo
-    public ProductInCartListContainer checkProduct(UUID userId){
+    public ProductInCartListContainer getFromCart(UUID userId){
         List<Product> result = new ArrayList<>();
         try{
             result = repository.findByUserId(userId).orElseThrow();
         }
         catch (NoSuchElementException ex){
-            System.out.println(ex);
+            System.out.println(ex.getMessage());
         }
         ArrayList<ProductInCartDTO> responseBody = new ArrayList<>();
         result.forEach(elem -> responseBody.add(new ProductInCartDTO(elem)));
         return new ProductInCartListContainer(responseBody);
+    }
+
+    @KafkaListener(
+            topics = "buy-products-request-event-topic",
+            containerFactory = "kafkaListenerContainerFactoryForBuyingProducts"
+    )
+    @SendTo
+    public boolean buyProducts(ProductInCartListContainer container){
+        for(ProductInCartDTO elem: container.getList()){
+            try{
+                Product product = repository.findById(new EmbeddedId(elem.getUserId(), elem.getProductId())).orElseThrow();
+                if(product.getNumber() != elem.getNumber()) return false;
+                repository.delete(product);
+            }
+            catch (NoSuchElementException ex){
+                return false;
+            }
+        }
+        return true;
     }
 }
