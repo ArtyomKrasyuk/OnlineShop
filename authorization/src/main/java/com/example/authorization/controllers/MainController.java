@@ -18,7 +18,7 @@ public class MainController {
     @Autowired
     private AuthService service;
 
-    @PostMapping("/registration")
+    @PostMapping("/auth/registration")
     public JWTResponse registration(@RequestBody Registration regData){
         try{
             return service.login(regData);
@@ -29,7 +29,7 @@ public class MainController {
         }
     }
 
-    @PostMapping("/authorization")
+    @PostMapping("/auth/authorization")
     public JWTResponse authorization(@RequestBody Authorization authData){
         try{
             return service.login(authData);
@@ -40,7 +40,7 @@ public class MainController {
         }
     }
 
-    @PostMapping("/token")
+    @PostMapping("/auth/token")
     public JWTResponse getNewAccessToken(@RequestBody RefreshRequest refreshRequest){
         try{
             return service.getAccessToken(refreshRequest.getToken());
@@ -51,7 +51,7 @@ public class MainController {
         }
     }
 
-    @PostMapping("/refresh")
+    @PostMapping("/auth/refresh")
     public JWTResponse getNewRefreshToken(@RequestBody RefreshRequest refreshRequest){
         try{
             return service.refresh(refreshRequest.getToken());

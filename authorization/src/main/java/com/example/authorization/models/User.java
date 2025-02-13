@@ -1,20 +1,20 @@
 package com.example.authorization.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
-
 import java.util.UUID;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name="users")
-public class User {
+public class User{
+    public enum Role{
+        USER,
+        ADMIN
+    }
+
     @Id
     private UUID id;
     private String username;
@@ -23,4 +23,6 @@ public class User {
     @Column(unique = true)
     private String email;
     private String password;
+    @Enumerated(EnumType.STRING)
+    private Role role;
 }

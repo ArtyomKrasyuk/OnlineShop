@@ -52,7 +52,7 @@ public class AuthService {
         if(userRepository.existsUserByPhone(auth.getPhone())) throw new AuthException("Phone already taken");
         UUID uuid = UUID.randomUUID();
         while(userRepository.existsById(uuid)) uuid = UUID.randomUUID();
-        User user = new User(uuid, auth.getUsername(), auth.getPhone(), auth.getEmail(), auth.getPassword());
+        User user = new User(uuid, auth.getUsername(), auth.getPhone(), auth.getEmail(), auth.getPassword(), User.Role.USER);
         userRepository.save(user);
         String accessToken = provider.generateAccessToken(user);
         String refreshToken = provider.generateRefreshToken(user);

@@ -49,6 +49,7 @@ public class JwtProvider {
         final Date refreshExpiration = Date.from(refreshExpirationInstant);
         return Jwts.builder()
                 .subject(user.getEmail())
+                .claim("id", user.getId())
                 .expiration(refreshExpiration)
                 .signWith(jwtRefreshSecret)
                 .compact();
