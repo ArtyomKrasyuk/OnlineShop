@@ -247,6 +247,7 @@ public class KafkaConfig {
     }
 
     @Bean
+    @Qualifier("consumerFactoryForProductInChecking")
     public ConsumerFactory<String, Boolean> consumerFactoryForProductInChecking(){
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -266,9 +267,10 @@ public class KafkaConfig {
     }
 
     @Bean
+    @Qualifier("replyContainerForProductChecking")
     public KafkaMessageListenerContainer<String, Boolean> replyContainerForProductChecking(
             @Qualifier("checkAvailabilityResponse") NewTopic topic,
-            ConsumerFactory<String, Boolean> consumerFactory
+            @Qualifier("consumerFactoryForProductInChecking") ConsumerFactory<String, Boolean> consumerFactory
     ) {
         ContainerProperties containerProperties = new ContainerProperties(topic.name());
         return new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
@@ -277,7 +279,7 @@ public class KafkaConfig {
     @Bean
     public ReplyingKafkaTemplate<String, ProductAvailabilityDTO, Boolean> replyingKafkaTemplateForChecking(
             ProducerFactory<String, ProductAvailabilityDTO> producerFactory,
-            KafkaMessageListenerContainer<String, Boolean> replyContainer
+            @Qualifier("replyContainerForProductChecking") KafkaMessageListenerContainer<String, Boolean> replyContainer
     ) {
         return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
     }
@@ -361,6 +363,7 @@ public class KafkaConfig {
 
 
     @Bean
+    @Qualifier("consumerFactoryForBuyingProducts")
     public ConsumerFactory<String, Boolean> consumerFactoryForBuyingProducts(){
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -380,9 +383,10 @@ public class KafkaConfig {
     }
 
     @Bean
+    @Qualifier("replyContainerForBuyingProducts")
     public KafkaMessageListenerContainer<String, Boolean> replyContainerForBuyingProducts(
             @Qualifier("buyProductsResponse") NewTopic topic,
-            ConsumerFactory<String, Boolean> consumerFactory
+            @Qualifier("consumerFactoryForBuyingProducts") ConsumerFactory<String, Boolean> consumerFactory
     ) {
         ContainerProperties containerProperties = new ContainerProperties(topic.name());
         return new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
@@ -391,7 +395,7 @@ public class KafkaConfig {
     @Bean
     public ReplyingKafkaTemplate<String, ProductInCartListContainer, Boolean> replyingKafkaTemplateForBuyingProducts(
             ProducerFactory<String, ProductInCartListContainer> producerFactory,
-            KafkaMessageListenerContainer<String, Boolean> replyContainer
+            @Qualifier("replyContainerForBuyingProducts") KafkaMessageListenerContainer<String, Boolean> replyContainer
     ) {
         return new ReplyingKafkaTemplate<>(producerFactory, replyContainer);
     }

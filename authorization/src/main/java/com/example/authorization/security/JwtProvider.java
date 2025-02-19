@@ -40,6 +40,7 @@ public class JwtProvider {
                 .claim("username", user.getUsername())
                 .claim("phone", user.getPhone())
                 .claim("id", user.getId())
+                .claim("role", user.getRole())
                 .compact();
     }
 
